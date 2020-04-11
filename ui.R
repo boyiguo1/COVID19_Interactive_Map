@@ -17,18 +17,20 @@ shinyUI(fluidPage(
     titlePanel("County Level Map"),
 
     # Sidebar with a slider input for number of bins
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("date",
-                        "Date:",
-                        min = as.Date("2020-03-01"),
-                        max = as.Date("2020-04-03"),
-                        value = as.Date("2020-03-01"))
-        ),
-
-        # Show a plot of the generated distribution
+    fluidPage(
+        # useShinyjs(),
+        # extendShinyjs(text = "shinyjs.resetClick = function() { Shiny.onInputChange('.clientValue-plotly_click-A', 'null'); }"),
+        # # Show a plot of the generated distribution
         mainPanel(
-            plotlyOutput("distPlot")
+            # sliderInput("date",
+            #             "Date:",
+            #             min = as.Date("2020-03-01"),
+            #             max = as.Date("2020-04-03"),
+            #             value = as.Date("2020-03-01")),
+            actionButton("toNational", "Back to National Map"),
+            plotlyOutput("distPlot")#,
+            #verbatimTextOutput("clickText")
         )
+
     )
 ))
