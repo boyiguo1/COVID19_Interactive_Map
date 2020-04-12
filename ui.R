@@ -22,11 +22,11 @@ shinyUI(fluidPage(
         # extendShinyjs(text = "shinyjs.resetClick = function() { Shiny.onInputChange('.clientValue-plotly_click-A', 'null'); }"),
         # # Show a plot of the generated distribution
         mainPanel(
-            # sliderInput("date",
-            #             "Date:",
-            #             min = as.Date("2020-03-01"),
-            #             max = as.Date("2020-04-03"),
-            #             value = as.Date("2020-03-01")),
+            sliderInput("date",
+                        "Date:",
+                        min = as.Date("2020-03-01"),
+                        max = as.Date(Sys.Date()),
+                        value = as.Date(Sys.Date())),
             actionButton("toNational", "Back to National Map"),
             plotlyOutput("distPlot")#,
             #verbatimTextOutput("clickText")

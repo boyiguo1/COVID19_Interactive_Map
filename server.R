@@ -8,98 +8,84 @@
 #
 
 library(shiny)
-library(shinyjs)
 library(tidyverse)
-library(sf)
-library(maps)
+# library(sf)
+# library(maps)
 library(plotly)
-library(unglue)
 
-us <- st_as_sf(maps::map("state",fill=TRUE, plot =FALSE)) %>% 
-    mutate(ID_old = ID %>% as.character())
+# Load Map Data
+map_us <- read_rds("Data/us_map.rds")
+map_state <- read_rds("Data/state_map.rds")
+covid_us <- read_rds("Data/us_covid.rds")
+covid_state <- read_rds("Data/state_covid.rds")
+smry_us <- read_rds("Data/us_covid_summary.rds")
+smry_state <- read_rds("Data/state_covid_summary.rds")
 
-us_state <- st_as_sf(maps::map("county",fill=TRUE, plot =FALSE)) %>% 
-    mutate(state = unglue_data(ID%>% as.character(), "{State},{County}") %>% pull(State),
-           county = unglue_data(ID%>% as.character(), "{State},{County}") %>% pull(County),
-           ID_old = ID %>% as.character(),
-           ID = county) %>% 
-    split(.$state)
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-
-    # covid <- read.csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
-    # al_covid <- covid %>% filter(state == "Alabama") %>% 
-    #     transmute(date, cases, 
-    #               county = county %>% tolower)
-    # 
-    
-
     
     state_level <- reactiveVal(FALSE)
     current_state <- reactiveVal(NULL)
-    clicked_region <-reactiveVal(NULL)
+    #clicked_region <-reactiveVal(NULL)
    
     geo_dat <- reactive({
-        # message("Chaning Map Data;")
-        # message(state_level())
-        # message(is.null(current_state()))
-        # js$resetClick()
-        if(is.null(current_state())) us
-        else
-            us_state[[current_state()]]
+        if(is.null(current_state())){
+            map_us %>%
+                left_join(covid_us %>% filter(date==as.Date("2020-04-10")),
+                          by = ("NAME")) %>% 
+                filter(!(STUSPS %in% c("HI", "PR", "AK","AS","VI","GU","MP")))
+            
+        }
+        else{
+            map_state[[current_state()]] %>% 
+                left_join(covid_state %>% 
+                              filter(date==as.Date("2020-04-10"), 
+                                     state.x==current_state()) %>% 
+                              rename(NAME = county.x),
+                          by=("NAME")
+                          )
+        }
 
     })
-    # input$date
      
         
     output$distPlot <- renderPlotly(
-        plot_ly(geo_dat(), split=~ID, color = I("gray90"),
+        plot_ly(geo_dat(), split=~NAME, color = ~cases,
                 hoveron = "fills",
                 hoverinfo = "text",
-                #text = ~paste("num of cases: ", cases, "\n Number of Death", 
-                #              cases-10),
+                text = ~paste(NAME, "\n", 
+                              "Population: ",pop, "\n",
+                              "Cases, total: ",cases, "\n",
+                              "Deaths, total: ",deaths, "\n",
+                              "Cases, rate: ", cases_rate,"\n",
+                              "Deaths, rate: ", deaths_rate,"\n"
+                              ),
                 showlegend = FALSE)
     )
     
+    # Event Handler for Back to National Map Button
     observeEvent(input$toNational, {
-        
-        # message("State Level value is ", state_level())
-        # message("if Current State is NULL", is.null(current_state()))
-        # message("Back to National")
-        # js$resetClick()
-        # message("reset State Click")
         state_level(FALSE)
         current_state(NULL)
-        clicked_region(NULL)
-        # message(state_level())
-        # message(is.null(current_state()))
+        # clicked_region(NULL)
     })
     
+    # Event Handler for Clicks on Map
     observeEvent(event_data("plotly_click"),{
-   # output$clickText <- renderPrint({
-        # message('clicked')
         d <- event_data("plotly_click")
         if(!is.null(d)) {
-            # message("Click State Trigered")
-            # message("Currnet State is:", current_state())
-            # message("if is on State Level ", state_level())
-            
             if(state_level()){
                 if(!is.null(current_state()))
-                tmp_stat_dat <- us_state[[current_state()]]
+                tmp_stat_dat <- map_state[[current_state()]]
                 tmp_stat_dat$ID[d$curveNumber+1]
             }
             else{ # National Level
-                # Find State Name
-                tmp_stat <- us$ID[d$curveNumber+1]
-                
-                # Update reactive data
-                current_state(tmp_stat)
+                message(d)
+                message("Look HERE!!!!!",d$curveNumber)
+                message(map_us$NAME[d$curveNumber+1])
+                current_state(map_us$NAME[d$curveNumber+1])
                 state_level(TRUE)
-                #js$resetClick()
-                
-                # return State Name
                 current_state()
 
             }
