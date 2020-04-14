@@ -22,6 +22,12 @@ covid_state <- read_rds("Data/state_covid.rds")
 # smry_us <- read_rds("Data/us_covid_summary.rds")
 # smry_state <- read_rds("Data/state_covid_summary.rds")
 
+na_to_zero <- function(x){
+    x[is.na(x)] <- 0
+    x
+}
+
+a <- "cases_rate"
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
@@ -33,13 +39,13 @@ shinyServer(function(input, output) {
     covid_dat <- reactive({
         if(is.null(current_state())){ # At National Map Page
             set_date <- min(input$date, max(covid_us$date))
-            message("look_here+++++", set_date)
+            # message("look_here+++++", set_date)
             covid_us %>% 
                 filter(date==as.Date(set_date))
         }
         else{ # At State Map Page
             set_date <- min(input$date, max(covid_state$date))
-            message("look_here+++++", set_date)
+            # message("look_here+++++", set_date)
             covid_state %>% 
                 filter(date==as.Date(set_date), 
                        state.x==current_state()) %>% 
@@ -49,7 +55,7 @@ shinyServer(function(input, output) {
     
    
     geo_dat <- reactive({
-        # message("Generate _data")
+         message("Generate _data")
         # message( map_us%>% head)
         # message("state data")
         # message(map_state %>% head)
@@ -57,7 +63,8 @@ shinyServer(function(input, output) {
             map_us %>%
                 left_join(covid_dat(),
                     #covid_us %>% filter(date==as.Date("2020-04-10")),
-                          by = ("NAME"))
+                          by = ("NAME")) %>% 
+                mutate_at(c("cases", "deaths", "cases_rate", "deaths_rate"), na_to_zero)
             }
         else{
             map_state[[current_state()]] %>% 
@@ -66,27 +73,32 @@ shinyServer(function(input, output) {
                     #                     state.x==current_state()) %>% 
                     #     rename(NAME = county.x),
                           by=("NAME")
-                          )
+                          ) %>% 
+                mutate_at(c("cases", "deaths", "cases_rate", "deaths_rate"), na_to_zero)
         }
 
     })
-     
+    
+    # output$generate_date <- renderText(
+    #     paste("The data used to generate the map is lastly updated at", update_time )
+    # ) 
         
     output$distPlot <- renderPlotly({
-        message("map_us class", map_us %>% class)
-        message("map_state class", map_state %>% class)
-        message("geo_data class", geo_dat() %>% class)
-        plot_ly(geo_dat(), split=~NAME, color = ~cases,
+        # message("map_us class", map_us %>% class)
+        # message("map_state class", map_state %>% class)
+        # message("geo_data class", geo_dat() %>% class)
+        plot_ly(geo_dat(), split=~NAME, color = as.formula(paste("~", input$outcome)),
                 hoveron = "fills",
                 hoverinfo = "text",
                 text = ~paste(NAME, "\n", 
                               "Population: ",pop, "\n",
                               "Cases, total: ",cases, "\n",
                               "Deaths, total: ",deaths, "\n",
-                              "Cases, rate: ", cases_rate,"\n",
-                              "Deaths, rate: ", deaths_rate,"\n"
+                              "Cases, rate: ", cases_rate %>% plyr::round_any(0.01),"\n",
+                              "Deaths, rate: ", deaths_rate %>% plyr::round_any(0.01),"\n"
                               ),
-                showlegend = FALSE)
+                showlegend = FALSE) %>%
+            layout(title=paste("On date:", as.Date(input$date)))
     })
     
     # Event Handler for Back to National Map Button
@@ -116,5 +128,7 @@ shinyServer(function(input, output) {
             }
         }
     })
+    
+
     
 })
