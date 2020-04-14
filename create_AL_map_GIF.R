@@ -35,5 +35,5 @@ p <- ggplot(dat,
 
 
 animate(p, width = 600, height = 800, renderer = gifski_renderer())
-anim_save("C:/Users/boyiguo1/Desktop/covid_AL.gif")
+anim_save("covid_AL.gif")
 
