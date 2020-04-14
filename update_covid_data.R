@@ -4,9 +4,8 @@ library(tidyverse)
 # COVID-19 Data
 nyt <- "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
 
-
-us_acs5 <- read_RDS("Data/state_level_census.rds")
-state_acs5 <- read_RDS("Data/county_level_census.rds")
+us_acs5 <- read_rds("Data/state_level_census.rds")
+state_acs5 <- read_rds("Data/county_level_census.rds")
 
 
 us_covid <- read_csv(nyt) %>% 
@@ -54,3 +53,9 @@ state_covid_sum <- state_covid %>%
 
 saveRDS(state_covid, "Data/state_covid.rds")
 saveRDS(state_covid_sum, "Data/state_covid_summary.rds")
+
+
+saveRDS(
+  list(update_time = Sys.time(),                 # Reporting the data generating data
+       data_last_date = us_covid$date %>% max),  # Set up bound for time slider
+       "Data/meta_data.rds")
