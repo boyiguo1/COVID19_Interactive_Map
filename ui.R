@@ -41,6 +41,17 @@ shinyUI(fluidPage(
                          selected = "cases_rate"),
             hr(),
             tags$div(class="header", checked=NA,
+                     tags$p("")),
+            hr(),
+            tags$div(class="header", checked=NA,
+            tags$p("The COVID-19 statistics is generated using ",
+                   a("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")),
+            tags$p("Laste generated at ",
+                         meta_data$update_time, " in ", Sys.timezone()," time." )
+            ),
+            
+            hr(),
+            tags$div(class="header", checked=NA,
                      tags$p("Due to techinical difficulties, the author regrets not being
                             able to include Alaska, American Samoa, Guam, Hawaii, Northern
                             Mariana Islands, Puerto Rico, Virgin Islands.")),
@@ -56,8 +67,7 @@ shinyUI(fluidPage(
             
             tags$h4("Click on the map to go to the state map."),
             actionButton("toNational", "Back to National Map"),
-            plotlyOutput("distPlot"),
-            tags$p(paste("The data used to generate the map is lastly updated at", meta_data$update_time ))
+            plotlyOutput("distPlot")
         )
         
     )
